@@ -12,9 +12,9 @@ No source code, CSS, templates, documentation text, comments, data structures or
 
 ## 2. License review
 
-- Source: the license terms of the replaced commercial library (its vendor's Enterprise License Terms), read in full on 2026-11-16.
+- Source: the license terms under which the host application uses the replaced commercial library, read in full on 2026-11-16.
 - Findings:
-  - The license allows use in up to 5 projects and allows modifications, but forbids distributing modified software or parts of it as a standalone application, forbids distributing the components in a way that allows reuse or redistribution, and forbids transfer, lease, assignment or sublicensing.
+  - The license allows modifications, but forbids distributing modified software or parts of it as a standalone application, forbids distributing the components in a way that allows reuse or redistribution, and forbids transfer, lease, assignment or sublicensing.
   - It grants the vendor a royalty-free right to use, modify and distribute the licensee's modifications.
   - It states that copying, adapting or compiling the documentation without authorisation is prohibited.
   - It contains **no clause that restricts reverse engineering, decompiling or analysis**.

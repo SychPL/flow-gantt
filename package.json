@@ -1,7 +1,16 @@
 {
   "name": "@sychpl/flow-gantt",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React Gantt-style chart for dependency flows: tree grid, dependency-driven bar layout and connectors.",
+  "author": "SychPL",
+  "homepage": "https://github.com/SychPL/flow-gantt#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SychPL/flow-gantt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SychPL/flow-gantt/issues"
+  },
   "license": "MIT",
   "keywords": [
     "react",

@@ -4,7 +4,11 @@ A React chart for dependency flows: a tree grid on the left and a timeline on th
 
 Status: 0.1 pre-release. All milestones of the clean-room plan are implemented (layout, data helpers, rendering, interactions, accessibility, performance, features beyond parity). The API may still change before 1.0.
 
-The specification, decisions log and provenance record live in the source repository (`docs/spec.md`, `docs/decisions.md`, `docs/provenance.md`); they are not shipped in the npm package.
+Documentation in the source repository (not shipped in the npm package):
+
+- [Specification](https://github.com/SychPL/flow-gantt/blob/main/docs/spec.md) - behaviour, public API and acceptance tests.
+- [Decisions](https://github.com/SychPL/flow-gantt/blob/main/docs/decisions.md) - choices made where the specification left a question open, and security review outcomes.
+- [Provenance](https://github.com/SychPL/flow-gantt/blob/main/docs/provenance.md) - how the clean-room process was run.
 
 ## Install
 
