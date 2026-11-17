@@ -2,15 +2,12 @@
 
 A React chart for dependency flows: a tree grid on the left and a timeline on the right, where every bar is placed after its predecessors (finish-to-start) instead of on a calendar. Written from scratch through a clean-room process to replace a commercial Gantt library in its first host application, to be released under the MIT license.
 
-Status: v0.1, all milestones of the clean-room plan implemented (layout, data helpers, rendering, interactions, accessibility, performance, features beyond parity). Private until the release checklist in [SEC-3](docs/spec.md) is done; not published to npm.
+Status: 0.1 pre-release. All milestones of the clean-room plan are implemented (layout, data helpers, rendering, interactions, accessibility, performance, features beyond parity). The API may still change before 1.0.
 
-- [docs/spec.md](docs/spec.md) - functional specification, public API and acceptance tests (the only implementation input).
-- [docs/decisions.md](docs/decisions.md) - decisions taken where the specification left a question open, and security review outcomes.
-- [docs/provenance.md](docs/provenance.md) - sources consulted while writing the specification.
+The specification, decisions log and provenance record live in the source repository (`docs/spec.md`, `docs/decisions.md`, `docs/provenance.md`); they are not shipped in the npm package.
 
 ## Install
 
-The package is not published yet. Until the release, build it here (`pnpm build`) and install it from a local path or a git reference; after the release it will be:
 
 ```bash
 pnpm add @sychpl/flow-gantt
