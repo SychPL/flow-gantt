@@ -1,0 +1,83 @@
+# Implementation decisions (phase B)
+
+Decisions the implementer took where `spec.md` v1.1 leaves a question open, each settled together with an independent Codex review (`codex exec --sandbox read-only`), as the owner asked not to be consulted. Every entry gives the decision and the reason. Inputs were only `README.md`, `spec.md`, the private host migration notes that were in this repository at the time (since removed) and public standards.
+
+## Layout and data (milestone 1)
+
+- D-1 Duplicate dependencies (DATA-8) are reported with a new code `duplicate-dependency`; a dependency whose `id` was already used is reported with `duplicate-dependency-id` and ignored (first occurrence wins). Reason: the spec requires reporting but `FlowDataError` had no code for it, and unique ids are needed so `removeDependency(state, id)` removes exactly the connector the user picked.
+- D-2 `wouldCreateCycle(dependencies, from, to, items?)` takes an optional fourth parameter. With `items` it checks the combined layout graph of DATA-9 (group start and end constraints); without, only explicit dependencies. The component always passes items. Reason: a dependency from a child to its own group closes a cycle that the dependency list alone cannot show.
+- D-3 Cycle breaking (DATA-9): every item is two nodes, start S(i) and end E(i). Edges: S(i)->E(i), S(g)->S(c) and E(c)->E(g) for each child (implicit, never ignored), E(from)->S(to) per dependency. Outgoing edges are ordered children first (display order) then S(i)->E(i); explicit dependencies (input order) then E(i)->E(parent). DFS roots are S(i), E(i) in display order. On a back edge the most recently traversed explicit dependency on the cycle is ignored; when it lies earlier on the DFS path, the search unwinds to its source node and continues. Reason: deterministic, iterative (no recursion limit), linear on acyclic input.
+- D-4 An item whose `kind` is neither `group` nor `leaf` at run time is treated as a leaf without an error. Reason: there is no error code for it and rendering must never throw (SEC-2).
+- D-5 Parent errors: unknown parent id gives `unknown-parent`, a leaf as parent gives `invalid-parent`, a group inside a group gives `nested-group`; the item is shown at top level.
+- D-6 `moveToGroup` skips leaves already in the target group (their dependencies stay), ignores group ids and unknown ids, appends the moved leaves at the end of the items array in their current array order (after the new group when one is created), removes source groups that became empty and every dependency touching the moved leaves or the removed groups. An unknown target group returns the state unchanged. Reason: consistent with `ungroup` and `removeItems`, no dangling dependencies (Codex).
+- D-7 `ungroup` on a group puts its children where the group was in the items array and also removes dependencies touching the group itself. On a leaf inside a group the leaf keeps its array position with `parentId: null`; a group that becomes empty is removed together with its dependencies. A top-level leaf or an unknown id is a no-op with `movedIds: []`.
+- D-8 `reorder` counts `newIndex` among the new parent's children after removing the item, clamps it to `[0, siblingCount]`, and inserts the item before the sibling at that index, or after the last sibling (after the group item when the group is empty, at the end for top level). Groups only move at top level; invalid targets return the state unchanged; dependencies are kept.
+- D-9 `addItems` applies `parentId` (default `null`) to every new item; chained dependencies are `finish-to-start` and carry `gap` only when the option is given, so the chart default applies otherwise.
+- D-10 DATA-15 negative gaps: a dependency contributes `max(end(p) + gap, start(p))` to its successor; a leaf inside a group still never starts before its group.
+- D-11 Longest path (X-2): candidates are explicit predecessors whose contribution equals the current start plus, when the item starts at its group's start, the group's predecessors whose contribution equals the group start. Ties go to the first item in display order. Reaching a group continues from its child with the latest end. An empty group may start or appear in the path (the only non-leaf case). `highlightLongestPath` also colours the group-level connectors the path traverses (Setup to Sales flow, Sales flow to Month end in the reference example).
+- D-12 Invalid origin: `computeLayout` still computes units, reports `invalid-origin` and returns Invalid Date values; the component renders the grid and an empty timeline.
+- D-13 `maxDepth` (DATA-5, SHOULD) is deferred: v1 supports depth 2 only, which is all the spec requires.
+- D-14 Hostile input (Codex security review of milestone 1): item and dependency ids must be strings; anything else is skipped and reported with a new code `invalid-id` (so no later string conversion or key building can throw). Spans, gaps, `defaultSpan` and `dependencyGap` beyond 1,000,000 base units in absolute value are rejected like non-finite numbers, so sums over thousands of items stay finite. Dependency pairs are keyed by item index, not by serialising ids.
+
+## Rendering, interaction and accessibility (milestones 2 to 4)
+
+- D-20 Scrolling (REN-6, REN-7): one scroll container holds both panes. The grid pane is `position: sticky; left: 0` and both headers are `position: sticky; top: 0`. Vertical scrolling is then the same scroll for both panes, so the panes cannot drift (including momentum scrolling), and the grid never scrolls horizontally. Trade-off: the native horizontal scrollbar spans the full chart width, including under the grid.
+- D-21 A click on a timeline row background that is not on a bar is "empty timeline space" (INT-6) and clears the selection; only bars and grid rows select (INT-1).
+- D-22 X-1 focus highlight follows the focused row while focus is in the chart and clears on blur (as AT-X1 states). A pointer press on a grid row only moves DOM focus to that row when the chart already has focus, so a mouse click does not leave the whole chart dimmed.
+- D-23 A11Y-11 text equivalents for variants: `FlowMessages.variant(variant)` was added; defaults are "Depends on other items." for `dependent` and "Delayed." for `delayed`, empty otherwise. It is appended to the row description.
+- D-24 A11Y-11 error cue beyond hue: new token `--fg-status-error-border` (an addition to THEME-1) draws a 3 px marker on the left edge of error rows in both panes and a 2 px bar border.
+- D-25 `BarRenderContext.status` is typed `ItemStatus`, not only `"error"`, because X-5 adds statuses.
+- D-26 X-6 animation interpolates item positions in JavaScript (`requestAnimationFrame`) over `--fg-motion-duration`, so bars, group frames, connectors and host layers move together (SVG path data cannot be transitioned with CSS in every browser). The final geometry is always the `computeLayout` result.
+- D-27 DATA-15 "switches to the coarsest zoom level that fits": when the content at the requested level would exceed 2,000,000 px, the chart uses the coarsest level; if even that does not fit, the content width is capped. The effective level is internal; `onZoomLevelChange` is not called (EVT-2). An invalid or empty `zoomLevels` list or an unknown `zoomLevel` id reports `invalid-option` and falls back to the defaults (Codex).
+- D-28 `onLayoutChange` and `onDataError` compare values (units, error fields, longest path), not object identities, so a new but equal input does not fire them again (EVT-2). Errors from DATA-8 and DATA-15 are part of `onDataError`.
+- D-30 Hostile sizes (Codex security review of milestone 2): `initialSize` must be finite and positive, and any viewport size (initial or measured) above 16,384 px is treated as 16,384 px; at most 1,000 time scale cells render at once. This bounds the rendered window whatever the input.
+- D-31 `canConnect` answers are cached per target only while a drag hovers; on drop (or Enter in keyboard linking) the host is asked again, so a policy change during the drag is respected. Cycle and duplicate checks use a per-drag reachability set computed once from the source (one reverse graph walk).
+- D-32 Dimmed items (X-1, X-8) use `--fg-dim-opacity` (0.35 by default, as the spec's token table says), so their text is below 4.5:1 while a chain highlight or `highlightedIds` is active. This is a deliberate, transient de-emphasis of the items the user is not looking at; full contrast returns when the pointer leaves or the focus leaves the chart. Hosts that need full contrast at all times set `--fg-dim-opacity` higher or `chainHighlight="none"`. The automated axe check (AT-A1) runs without an active highlight.
+- D-33 Codex security review of milestone 3 (interactions), all fixed: keyboard linking stores the candidate and its validity in state from the key handler, so `canConnect` is never called during render; one touch long press reports one `onContextMenu` call whichever comes first (our timer or the browser's own `contextmenu`), and the native menu is suppressed only when the host handled it; the long-press timer is cleared on cancel and unmount; pointer capture is tracked and released by `cancelInteraction` and Escape, and a lost capture ends the gesture; the auto-scroll loop stops cleanly if a host policy callback throws; `canReorder` is asked once per distinct drop position.
+- D-34 Per-frame work: connectors are found by a linear scan of the drawable dependencies on each render (a few arithmetic checks per dependency, no allocation for off-screen ones). This keeps the code small; AT-P2 measures it at 5,000 dependencies. An interval index would be the upgrade path if PERF-4 fails on the reference machine.
+- D-35 Codex security review of milestone 4 (keyboard), all fixed: keys typed into interactive host content inside a cell (inputs, buttons, links, editable text) are left to that content; one-shot keys (Enter, Space, Delete, Backspace, Shift+F10, the context-menu key, D, Ctrl+A) ignore key repeat while navigation and Alt+arrow reordering repeat; the focus ring shows on the first Tab (`:focus-visible`), not only after a key press; when the focused row disappears (its group collapsed or the item removed) focus moves to its visible group or the first row; the keyboard context-menu guard only swallows the browser's own follow-up event (a real right-click starts with a pointerdown and resets it).
+- D-29 Status precedence (X-5): the error row background wins over selection (REN-32); other statuses only style the bar (and the accessible text), so the selection background stays visible for them.
+
+- D-36 The `resizableGrid` splitter (REN-3) is pointer-only and hidden from assistive technology, because the chart must stay a single Tab stop (A11Y-1). Keyboard resizing is deferred.
+- D-37 Touch (INT-23, Q8): scrolling, tap to select and long press for the context menu are supported. Creating dependencies by touch is documented as unsupported; handles use `touch-action: none`, so it may work on a selected bar, but it is not tested.
+
+## Platform and performance (milestone 5)
+
+- D-50 Performance measurement: first render is timed around a synchronous mount (`flushSync`) once the data exists; scrolling is timed as the synchronous script cost of programmatic 300 px steps (render plus commit). DOM nodes are counted under `.fg-root`. PERF-6 is checked through Chromium's `Nodes` and `JSEventListeners` metrics after forced garbage collection around 100 remounts.
+- D-51 CI (decision Q10): every push and pull request runs lint, types, unit tests, build, bundle size, license check, the layout benchmark, unit tests on React 18.3, and the Chromium suite including the performance tests. CI thresholds are three times the spec numbers (shared runners are slower and noisy); the spec numbers themselves are asserted when the tests run locally and must be measured on the reference machine before a release. Third-party actions are pinned to commit SHAs.
+- D-53 Codex security review of milestone 5, all fixed: CI checkouts do not persist the token; the performance tests wait for an explicit ready flag; the PERF-6 test counts detached DOM nodes and `ResizeObserver` objects in heap snapshots before and after 100 remounts, besides node and listener counters.
+- D-52 PERF-7 is checked by `scripts/size.mjs` (minified, gzipped sum of all JavaScript entries and chunks, and the gzipped CSS file).
+
+## Beyond parity (milestone 6)
+
+- D-60 X-7 preview: the target's ghost bar is always shown (so a drop that moves nothing still shows where the target stays), plus a ghost for every item whose position would change. The hypothetical layout is one `buildModel` call per distinct target (about 5 ms at 5,000 items and 5,000 dependencies), and pointer moves during a dependency drag are coalesced to one render per animation frame, so this cost is paid at most once per frame and only when the target changes.
+- D-61 X-6 animation touches only the items that move in each frame (the position arrays are reused), so one moving bar in a 5,000-item chart costs one interpolation per frame.
+- D-62 `flashItem` first scrolls the item into view (nearest), then flashes it, so the highlight is never spent off-screen (X-3).
+- D-63 The sticky group header copy (X-4) renders the group label as plain text, not the host's column render output, so host controls never become a keyboard stop hidden from assistive technology.
+- D-64 Relative imports in the source carry `.js` extensions so the published declarations resolve for consumers using `moduleResolution: "NodeNext"` as well as bundlers.
+- D-65 Codex security review of milestone 6: the six findings are fixed as D-60 to D-63 and the README install wording (the package is not published yet).
+
+## Status of SHOULD and optional items
+
+| Item | Status |
+| --- | --- |
+| DATA-5 `maxDepth` | Deferred (D-13); depth 2 only |
+| LAY-11 fixed `start` | Reserved: reported as `unsupported-field` and ignored |
+| REN-3 resizable grid | Implemented, pointer only (D-36) |
+| REN-23 `linkEndMarker` | Implemented (`dot`, `arrow`) |
+| REN-26 selected connector emphasis | Implemented |
+| INT-18 row reordering | Implemented, pointer and Alt+Up/Down |
+| INT-23 touch dependency creation | Not supported (D-37), as allowed |
+| LAYER-4 markers | Possible through host layers; no built-in API, as allowed |
+| PERF-7 bundle size | Implemented and checked in CI (about 21 kB JS, 3 kB CSS gzipped) |
+| X-1 to X-8 | Implemented and tested (AT-X1 to AT-X9) |
+| SEC-3 public release steps | Not done by design (repository stays private): MIT `LICENSE` added; host-specific material removed from the current tree (it is still in the git history); clean-room and disclosure review still to be recorded |
+| SEC-4 release hygiene | License check, committed lockfile and `npm pack --dry-run` run in CI; publishing with npm provenance is not configured because nothing is published yet |
+
+## Tooling
+
+- D-40 Lint and format: Biome, one dev dependency. Markdown is excluded so the spec is never reformatted.
+- D-41 Build: Vite library mode builds three ESM entries (`index`, `layout`, `ops`) with React external; `tsc --emitDeclarationOnly` emits types; `styles.css` is copied unchanged.
+- D-43 The only `!important` in the stylesheet is the `prefers-reduced-motion: reduce` override, which must beat every other transition and animation (THEME-6); host rules still win everywhere else (THEME-3).
+- D-44 SEC-4 license check: `scripts/check-licenses.mjs` reads `pnpm licenses list --json` and fails on any license outside an OSI allowlist (MIT, ISC, Apache-2.0, BSD-2/3-Clause, 0BSD, MPL-2.0, BlueOak-1.0.0, Zlib, Python-2.0, Unlicense), including SPDX OR/AND expressions of them.
+- D-42 React 18.3 compatibility is tested by a CI job that swaps the React dev dependencies to 18.3 and runs the unit tests (aliasing inside one install does not work because `react-dom` resolves its own `react` peer).

@@ -1,0 +1,117 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  background: #f6f8fa;
+  color: #1f2328;
+}
+
+.demo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.demo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #d0d7de;
+  background: #ffffff;
+}
+
+.demo-chart {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 8px;
+}
+
+.demo-bar-id {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.demo-bar-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.demo-badges {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.demo-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 11px;
+  color: #ffffff;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.demo-delay {
+  background: #0f6b4f;
+}
+
+.demo-repeat {
+  background: #1d4ed8;
+}
+
+/* A dark theme is only a set of token values (THEME-2). */
+.dark {
+  background: #0d1117;
+  color: #e6edf3;
+  --fg-surface: #0d1117;
+  --fg-text-color: #e6edf3;
+  --fg-border-color: #30363d;
+  --fg-grid-line-color: #21262d;
+  --fg-header-bg: #161b22;
+  --fg-header-text-color: #9198a1;
+  --fg-row-bg: #0d1117;
+  --fg-row-alt-bg: #151b23;
+  --fg-group-row-bg: #1c2128;
+  --fg-group-divider-color: #6e7681;
+  --fg-row-selected-bg: #1f3a5f;
+  --fg-group-row-selected-bg: #264d7d;
+  --fg-timeline-row-bg: #0d1117;
+  --fg-toggle-bg: #1f3a5f;
+  --fg-toggle-icon-color: #9ecbff;
+  --fg-bar-default-bg: #21262d;
+  --fg-bar-default-border: #8b949e;
+  --fg-bar-default-text: #e6edf3;
+  --fg-bar-dependent-bg: #172a45;
+  --fg-bar-dependent-border: #58a6ff;
+  --fg-bar-dependent-text: #cae3ff;
+  --fg-bar-delayed-bg: #0d2d2a;
+  --fg-bar-delayed-border: #2dd4bf;
+  --fg-bar-delayed-text: #ccfbf1;
+  --fg-bar-group-text: #e6edf3;
+  --fg-bar-selected-ring: #58a6ff;
+  --fg-group-frame-border: #6e7681;
+  --fg-group-frame-bg: rgb(13 17 23 / 0.5);
+  --fg-group-frame-header-bg: rgb(13 17 23 / 0.5);
+  --fg-link-color: #8b949e;
+  --fg-handle-bg: #0d1117;
+  --fg-handle-border: #8b949e;
+  --fg-focus-ring: #58a6ff;
+}
+
+.dark .demo-toolbar {
+  background: #161b22;
+  border-color: #30363d;
+}
