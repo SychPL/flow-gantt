@@ -1,8 +1,8 @@
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -62,4 +62,6 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      - run: npm publish ./*.tgz --ignore-scripts --provenance --access public
+      - run: npm publish ./*.tgz --ignore-scripts --provenance --access public ${PRERELEASE:+--tag next}
+        env:
+          PRERELEASE: ${{ github.event.release.prerelease && 'true' || '' }}
