@@ -2,6 +2,8 @@
 
 A React chart for dependency flows: a tree grid on the left and a timeline on the right, where every bar is placed after its predecessors (finish-to-start) instead of on a calendar. Written from scratch through a clean-room process to replace a commercial Gantt library in its first host application, to be released under the MIT license.
 
+![Flow Gantt: a tree grid of grouped jobs next to a timeline where each bar starts after its predecessors, with the longest path highlighted](https://raw.githubusercontent.com/SychPL/flow-gantt/main/docs/screenshot.png)
+
 Status: 0.1 pre-release. All milestones of the clean-room plan are implemented (layout, data helpers, rendering, interactions, accessibility, performance, features beyond parity). The API may still change before 1.0.
 
 Documentation in the source repository (not shipped in the npm package):
